@@ -1,11 +1,34 @@
 import { csv } from "d3";
 
+function indexToLandCover(num) {
+  const classes = {
+    0: "Water",
+    1: "Evergreen Needleleaf Forest",
+    2: "Evergreen Broadleaf Forest",
+    3: "Deciduous Needleleaf Forest",
+    4: "Deciduous Broadleaf Forest",
+    5: "Mixed Forest",
+    6: "Closed Shrublands",
+    7: "Open Shrublands",
+    8: "Woody Savannas",
+    9: "Savannas",
+    10: "Grasslands",
+    11: "Permanent Wetlands",
+    12: "Croplands",
+    13: "Urban and Built-up",
+    14: "Cropland/Natural Vegetation Mosaic",
+    15: "Snow and Ice",
+    16: "Barren or Sparsely Vegetated",
+  };
+  return classes[num];
+}
+
 export interface DataPoint {
   name: string;
   latitude: number;
   longitude: number;
   value: number;
-  category: string;
+  habitat: string;
 }
 
 export class DataProcessor {
@@ -18,7 +41,7 @@ export class DataProcessor {
           latitude: parseFloat(d.latitude || "0"),
           longitude: parseFloat(d.longitude || "0"),
           value: parseFloat(d.value || "0"),
-          category: d.category || "unknown",
+          habitat: indexToLandCover(d.LandCover) || "unknown",
         }))
         .filter((d) => !isNaN(d.latitude) && !isNaN(d.longitude));
     } catch (error) {
@@ -32,10 +55,10 @@ export class DataProcessor {
   } {
     const processed: { [key: string]: number } = {};
     data.forEach((point) => {
-      if (processed[point.category]) {
-        processed[point.category] += point.value;
+      if (processed[point.habitat]) {
+        processed[point.habitat] += point.value;
       } else {
-        processed[point.category] = point.value;
+        processed[point.habitat] = point.value;
       }
     });
     return processed;
@@ -45,9 +68,9 @@ export class DataProcessor {
     const values = data.map((d) => d.value).sort((a, b) => a - b);
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const step = (max - min) / 5;
+    const step = (max - min) / 6;
 
-    return Array.from({ length: 5 }, (_, i) => [
+    return Array.from({ length: 6 }, (_, i) => [
       Math.round(min + i * step),
       Math.round(min + (i + 1) * step),
     ]);

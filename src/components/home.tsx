@@ -11,7 +11,9 @@ function Home() {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mapType, setMapType] = useState<"choropleth" | "dot">("dot");
+  const [mapType, setMapType] = useState<"choropleth" | "dot" | "heatmap">(
+    "heatmap",
+  );
   const [fileInputKey, setFileInputKey] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -88,6 +90,24 @@ function Home() {
 
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2">
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                <Button
+                  onClick={() => setMapType("heatmap")}
+                  variant={mapType === "heatmap" ? "default" : "ghost"}
+                  size="sm"
+                  className="text-xs"
+                >
+                  Heatmap
+                </Button>
+                <Button
+                  onClick={() => setMapType("dot")}
+                  variant={mapType === "dot" ? "default" : "ghost"}
+                  size="sm"
+                  className="text-xs"
+                >
+                  Dots
+                </Button>
+              </div>
               <Input
                 key={fileInputKey}
                 type="file"
@@ -212,24 +232,6 @@ function Home() {
           />
         )}
       </div>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-2 text-sm text-gray-600">
-          <span>
-            Data Points: <strong>{data.length}</strong>
-          </span>
-          <span>
-            Categories:{" "}
-            <strong>{new Set(data.map((d) => d.category)).size}</strong>
-          </span>
-          <span>
-            Value Range:{" "}
-            <strong>
-              {Math.min(...data.map((d) => d.value))} -{" "}
-              {Math.max(...data.map((d) => d.value))}
-            </strong>
-          </span>
-        </div>
-      </CardContent>
     </div>
   );
 }
