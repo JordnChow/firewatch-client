@@ -11,7 +11,7 @@ function Home() {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mapType, setMapType] = useState<"choropleth" | "dot" | "heatmap">(
+  const [mapType, setMapType] = useState<| "dot" | "heatmap">(
     "heatmap",
   );
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -26,7 +26,7 @@ function Home() {
     setLoading(true);
     setError(null);
     try {
-      const sampleData = await DataProcessor.loadCSV("/sample-data.csv");
+      const sampleData = await DataProcessor.loadCSV("/hotspots20250630.csv");
       setData(sampleData);
     } catch (err) {
       setError("Failed to load sample data");
@@ -108,26 +108,6 @@ function Home() {
                   Dots
                 </Button>
               </div>
-              <Input
-                key={fileInputKey}
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="w-64"
-                disabled={loading}
-              />
-              <Button
-                onClick={loadSampleData}
-                variant="outline"
-                size="sm"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Load Sample"
-                )}
-              </Button>
             </div>
             <Button
               variant="ghost"
@@ -160,17 +140,24 @@ function Home() {
           <div className="flex-1 p-6">
             <nav className="space-y-6">
               <a
+                href="/"
+                className="block text-lg text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Map
+              </a>
+              <a
                 href="#"
                 className="block text-lg text-gray-700 hover:text-gray-900 transition-colors"
               >
                 About Us
               </a>
               <a
-                href="#"
+                href="/drone"
                 className="block text-lg text-gray-700 hover:text-gray-900 transition-colors"
               >
                 Drone Sample
               </a>
+              
             </nav>
 
             {/* Mobile File Upload */}
@@ -226,7 +213,6 @@ function Home() {
           <></>
         ) : (
           <MapContainer
-            data={data}
             mapType={mapType}
             onMapTypeChange={setMapType}
           />

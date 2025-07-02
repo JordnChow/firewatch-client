@@ -2,7 +2,6 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface MapLegendProps {
-  type: "dot";
   colorScale?: string[];
   valueRanges?: [number, number][];
   dotSizes?: number[];
@@ -11,15 +10,6 @@ interface MapLegendProps {
 }
 
 const MapLegend = ({
-  type = "choropleth",
-  colorScale = [
-    "#0066cc", // Blue (low density)
-    "#0080ff",
-    "#00ccff",
-    "#ffcc00", // Yellow (medium density)
-    "#ff6600",
-    "#ff0000", // Red (high density)
-  ],
   valueRanges = [
     [0, 10],
     [10, 20],

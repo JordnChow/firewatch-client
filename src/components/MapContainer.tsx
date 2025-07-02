@@ -13,12 +13,14 @@ import MapLegend from "./MapLegend";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
+import Papa from 'papaparse'
+
+
 
 interface MapContainerProps {
   data?: DataPoint[];
-  mapType?: "choropleth" | "dot" | "heatmap";
-  onMapTypeChange?: (type: "choropleth" | "dot" | "heatmap") => void;
-  onDateSelect?: (date: Date) => void;
+  mapType?: "dot" | "heatmap";
+  onMapTypeChange?: (type: "dot" | "heatmap") => void;
 }
 
 interface HeatmapCell {
@@ -28,10 +30,8 @@ interface HeatmapCell {
 }
 
 const MapContainer = ({
-  data = [],
   mapType = "dot",
-  onMapTypeChange = () => {},
-  onDateSelect = (date: Date) => console.log("Date selected:", date),
+  onMapTypeChange = () => { },
 }: MapContainerProps) => {
   const [valueRanges, setValueRanges] = useState<[number, number][]>([]);
   const [heatmapValueRanges, setHeatmapValueRanges] = useState<
@@ -47,13 +47,15 @@ const MapContainer = ({
   ]);
   const [heatmapCells, setHeatmapCells] = useState<HeatmapCell[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date(),
+    new Date(2025, 6, 2),
   );
   const [calendarPosition, setCalendarPosition] = useState({ x: 16, y: 16 });
   const [legendPosition, setLegendPosition] = useState({ x: 16, y: 400 });
   const [isDraggingCalendar, setIsDraggingCalendar] = useState(false);
   const [isDraggingLegend, setIsDraggingLegend] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [data, setData] = useState([])
+  const [selectedDays, setSelectedDays] = useState([new Date])
 
   // Australia bounds
   const australiaBounds = new LatLngBounds(
@@ -62,6 +64,57 @@ const MapContainer = ({
   );
 
   const australiaCenter: [number, number] = [-25.0, 133.0];
+
+  function indexToLandCover(num) {
+    const classes = {
+      0: "Water",
+      1: "Evergreen Needleleaf Forest",
+      2: "Evergreen Broadleaf Forest",
+      3: "Deciduous Needleleaf Forest",
+      4: "Deciduous Broadleaf Forest",
+      5: "Mixed Forest",
+      6: "Closed Shrublands",
+      7: "Open Shrublands",
+      8: "Woody Savannas",
+      9: "Savannas",
+      10: "Grasslands",
+      11: "Permanent Wetlands",
+      12: "Croplands",
+      13: "Urban and Built-up",
+      14: "Cropland/Natural Vegetation Mosaic",
+      15: "Snow and Ice",
+      16: "Barren or Sparsely Vegetated",
+    };
+    return classes[num];
+  }
+
+  useEffect(() => {
+    fetch('/data/hotspots20250702.csv')
+      .then(response => {
+        const contentType = response.headers.get('Content-Type');
+        if (!response.ok || !contentType.includes('text/csv')) {
+          throw new Error(`Fetch failed or returned HTML: ${response.status}`);
+        }
+        return response.text();
+      })
+      .then(text => {
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+        const cleaned = parsed.data
+          .map((d) => ({
+            name: d.name ?? "",
+            latitude: parseFloat(d.latitude ?? "0"),
+            longitude: parseFloat(d.longitude ?? "0"),
+            value: parseFloat(d.value ?? "0"),
+            habitat: indexToLandCover(d.LandCover) ?? "unknown",
+          }))
+          .filter((d) => !isNaN(d.latitude) && !isNaN(d.longitude));
+
+        setData(cleaned);
+      })
+      .catch(err => alert("Error: Sample data failed"));
+
+      setSelectedDays([new Date(2025, 6, 1), new Date(2025, 6, 2), new Date(2025, 6, 3)])
+  }, [])
 
   useEffect(() => {
     if (data.length > 0) {
@@ -159,9 +212,49 @@ const MapContainer = ({
   };
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
+    const checkDate = () => {
+      if(!date){
+        return false
+      }
+      for(let i = 0; i < selectedDays.length; i++){
+        if(selectedDays[i].toDateString() == date.toDateString()){
+          return true
+        }
+      }
+    }
+    if (date && checkDate()) {
+      console.log(date)
+      console.log(selectedDate)
       setSelectedDate(date);
-      onDateSelect(date);
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      console.log(`${year}${month}${day}`);
+      fetch(`/data/hotspots${year}${month}${day}.csv`)
+        .then(response => {
+          const contentType = response.headers.get('Content-Type');
+          if (!response.ok || !contentType.includes('text/csv')) {
+            throw new Error(`Fetch failed or returned HTML: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(text => {
+          const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+          const cleaned = parsed.data
+            .map((d) => ({
+              name: d.name ?? "",
+              latitude: parseFloat(d.latitude ?? "0"),
+              longitude: parseFloat(d.longitude ?? "0"),
+              value: parseFloat(d.value ?? "0"),
+              habitat: indexToLandCover(d.LandCover) ?? "unknown",
+            }))
+            .filter((d) => !isNaN(d.latitude) && !isNaN(d.longitude));
+
+          setData(cleaned);
+        })
+        .catch(err => {
+          alert(err)
+        });
     }
   };
 
@@ -195,6 +288,14 @@ const MapContainer = ({
   };
 
   const handleCalendarMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.closest("button") ||
+      target.closest('[role="button"]') ||
+      target.closest(".rdp-nav")
+    ) {
+      return;
+    }
     e.preventDefault();
     setIsDraggingCalendar(true);
     setDragOffset({
@@ -315,6 +416,19 @@ const MapContainer = ({
             selected={selectedDate}
             onSelect={handleDateSelect}
             className="rounded-md border"
+            modifiers={{
+              allowed: selectedDays,
+            }}
+            modifiersClassNames={{
+              allowed:
+                "bg-blue-100 text-blue-900 font-semibold hover:bg-blue-200",
+            }}
+            classNames={{
+              nav_button:
+                "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 transition-opacity duration-200 cursor-pointer rdp-nav",
+              nav_button_previous: "absolute left-1 hover:bg-accent rdp-nav",
+              nav_button_next: "absolute right-1 hover:bg-accent rdp-nav",
+            }}
           />
         </CardContent>
       </Card>
@@ -335,46 +449,46 @@ const MapContainer = ({
           {/* Render based on map type */}
           {mapType === "heatmap"
             ? // Render heatmap rectangles
-              heatmapCells.map((cell, index) => (
-                <Rectangle
-                  key={index}
-                  bounds={cell.bounds}
-                  pathOptions={{
-                    fillColor: cell.color,
-                    fillOpacity: 1,
-                    color: cell.color,
-                    weight: 0,
-                  }}
-                >
-                  <Popup>
-                    <div className="text-sm">
-                      <h3 className="font-semibold">Heatmap Cell</h3>
-                      <p>Density: {cell.density.toFixed(2)}</p>
-                      <p>Color: {cell.color}</p>
-                    </div>
-                  </Popup>
-                </Rectangle>
-              ))
+            heatmapCells.map((cell, index) => (
+              <Rectangle
+                key={index}
+                bounds={cell.bounds}
+                pathOptions={{
+                  fillColor: cell.color,
+                  fillOpacity: 1,
+                  color: cell.color,
+                  weight: 0,
+                }}
+              >
+                <Popup>
+                  <div className="text-sm">
+                    <h3 className="font-semibold">Heatmap Cell</h3>
+                    <p>Density: {cell.density.toFixed(2)}</p>
+                    <p>Color: {cell.color}</p>
+                  </div>
+                </Popup>
+              </Rectangle>
+            ))
             : // Render dot points
-              data.map((point, index) => (
-                <Marker
-                  key={index}
-                  position={[point.latitude, point.longitude]}
-                  icon={createDotIcon(point.value, getMarkerSize(point.value))}
-                >
-                  <Popup>
-                    <div className="text-sm">
-                      <h3 className="font-semibold">{point.name}</h3>
-                      <p>Habitat: {point.habitat}</p>
-                      <p>Value: {point.value}</p>
-                      <p>
-                        Coordinates: {point.latitude.toFixed(4)},{" "}
-                        {point.longitude.toFixed(4)}
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+            data.map((point, index) => (
+              <Marker
+                key={index}
+                position={[point.latitude, point.longitude]}
+                icon={createDotIcon(point.value, getMarkerSize(point.value))}
+              >
+                <Popup>
+                  <div className="text-sm">
+                    <h3 className="font-semibold">{point.name}</h3>
+                    <p>Habitat: {point.habitat}</p>
+                    <p>Value: {point.value}</p>
+                    <p>
+                      Coordinates: {point.latitude.toFixed(4)},{" "}
+                      {point.longitude.toFixed(4)}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
         </LeafletMapContainer>
       </div>
       {/* Legend - Draggable */}
@@ -388,7 +502,6 @@ const MapContainer = ({
           onMouseDown={handleLegendMouseDown}
         >
           <MapLegend
-            type={mapType}
             colorScale={colorScale}
             valueRanges={
               mapType === "heatmap" ? heatmapValueRanges : valueRanges
