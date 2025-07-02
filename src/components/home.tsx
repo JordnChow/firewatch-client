@@ -81,11 +81,8 @@ function Home() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b p-4 relative z-[200]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Flame className="h-8 w-8 text-orange-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Fire Watch</h1>
-            </div>
+          <div className="flex items-center">
+            <img src="/logo.png" style={{ height: 40, width: "auto" }} />
           </div>
 
           <div className="flex items-center gap-4">
@@ -122,9 +119,8 @@ function Home() {
       </div>
       {/* Slide-in Menu */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-[300] ${
-          isMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-[300] ${isMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
         onMouseLeave={() => setIsMenuOpen(false)}
       >
         <div className="flex flex-col h-full">
@@ -146,18 +142,12 @@ function Home() {
                 Map
               </a>
               <a
-                href="#"
-                className="block text-lg text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                About Us
-              </a>
-              <a
-                href="/drone"
+                href="./drone"
                 className="block text-lg text-gray-700 hover:text-gray-900 transition-colors"
               >
                 Drone Sample
               </a>
-              
+
             </nav>
 
             {/* Mobile File Upload */}
@@ -190,9 +180,8 @@ function Home() {
           <div className="bg-red-300 p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Fire Watch</h3>
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-gray-800">Contact us:</p>
-              <p className="text-sm text-gray-700">Email</p>
-              <p className="text-sm text-gray-700">Phone</p>
+              <p className="text-sm text-gray-700"><a href='https://github.com/jordnchow'>Personal Page</a></p>
+              <p className="text-sm text-gray-700"><a href='https://github.com/jordnchow/firewatch'>Fire Watch</a></p>
             </div>
           </div>
         </div>
